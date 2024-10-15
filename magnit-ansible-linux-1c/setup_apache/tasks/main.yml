@@ -1,0 +1,89 @@
+---
+# tasks file for setup_apache
+
+  - name: Run apt update if the last one is more than 3600 seconds ago
+    become: true
+    ansible.builtin.apt:
+      update_cache: yes
+      cache_valid_time: 3600
+
+  - name: Install apache httpd
+    become: true
+    ansible.builtin.apt:
+      name: apache2
+
+  - name: Install libapache2-mod-auth-gssapi
+    become: true
+    ansible.builtin.apt:
+      name: libapache2-mod-auth-gssapi
+
+  - name: Install sysstat
+    become: true
+    ansible.builtin.apt:
+      name: sysstat
+
+  - name: copy file zabbix_agentd.conf
+    become: true
+    copy:
+      src: zabbix_agentd.conf
+      dest: /etc/zabbix/
+      mode: 0644
+
+  - name: copy file iostat.discovery
+    become: true
+    copy:
+      src: iostat.discovery
+      dest: /etc/zabbix/scripts/
+      mode: 0755
+
+  - name: Reload service zabbix-agent
+    become: true
+    ansible.builtin.systemd:
+      name: zabbix-agent.service
+      state: reloaded 
+
+  # Создание каталога SSL
+  - name: Create a directory SSL if it does not exist
+    become: true
+    ansible.builtin.file:
+      path: /etc/apache2/ssl
+      state: directory
+      mode: '0755'
+
+  # Включение модулей для работы с ssl
+  - name: Run ssl
+    become: true
+    command: "a2enmod ssl"
+
+  - name: Run headers
+    become: true
+    command: "a2enmod headers"    
+
+  - name: Run rewrite
+    become: true
+    command: "a2enmod rewrite"  
+
+  # Копирование файлов сертификатов
+  - name: copy file cert.cer, cert.key
+    become: true
+    copy:
+      src: "{{ item }}"
+      dest: /etc/apache2/ssl
+      mode: 0755    
+    loop:
+      - cert.key
+      - cert.cer
+
+  # Удаление ссылки
+  - name: delete link
+    ignore_errors: yes
+    become: true
+    command: "unlink /etc/apache2/sites-enabled/000-default.conf"  
+
+ # Копирование файла конфигурации
+  - name: copy file default.conf
+    become: true
+    copy:
+      src: default.conf
+      dest: /etc/apache2/sites-enabled
+      mode: 0755

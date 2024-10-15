@@ -1,0 +1,4 @@
+*.yml linguist-language=YAML
+*.yaml linguist-language=YAML
+*.sh linguist-language=Shell
+*.py linguist-language=Python

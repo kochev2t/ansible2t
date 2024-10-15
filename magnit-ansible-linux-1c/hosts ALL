@@ -1,0 +1,44 @@
+serv1C:
+  hosts:
+    some_host_name:
+      ansible_host: some_host_ip
+
+# Развертывание службы дополнительного сервера 1С на другом порту
+serv1C_add:
+  hosts:
+    some_host_name_1:
+      ansible_host: some_host_ip
+
+
+web_servers:
+  hosts:
+    some_host_name: 
+      ansible_host: some_host_ip
+      server_1c: some_1c_cluster_name # имя кластера серверов 1с базы
+      base_1C: sravn_s_tantor1 # имя базы 1С
+
+      ###################################################################################################
+      #### Переменные, начальное значение которых определено в папке defaults
+      #flag_publ_client: false # Флаг "Публиковать доступ для клиентских приложений". По умолчанию true
+      flag_publ_web_serv_def: false # Флаг "Публиковать Web-сервисы по умолчанию". По умолчанию true
+      #flag_publ_web_serv: false # Флаг "Публиковать Web-сервисы. По умолчанию true
+      flag_publ_http_serv_def: false # Флаг "Публиковать HTTP-сервисы по умолчанию". По умолчанию true
+
+      list_web_serv_1c: # имена web сервисов 1с, которые нужно опубликовать. Имеет смысл если флаг flag_publ_web_serv = true, иначе игнорируется. 
+        - Exchange
+        - TSD
+      
+      list_http_serv_1c: # имена и корневые папки http сервисов 1с, которые нужно опубликовать. Если не нужно публиковать, то нужно удалить строки
+        - name: TSD
+          rootUrl: url_TSD
+        - name: Exchange
+          rootUrl: Exchange
+
+# Публикация на том же сервере второй базы
+web_servers_add:
+  hosts:
+    some_host_name_1: 
+      ansible_host: some_host_ip
+      server_1c: some_1c_cluster_name # имя кластера серверов 1с базы
+      base_1C: some_base_name # имя базы 1С
+

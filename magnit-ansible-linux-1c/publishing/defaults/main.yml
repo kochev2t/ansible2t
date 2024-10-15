@@ -1,0 +1,10 @@
+---
+# defaults file for publishing
+
+# Флаги по умолчанию - все включено
+flag_publ_client: true # Флаг "Публиковать доступ для клиентских приложений"
+flag_publ_web_serv_def: true # Флаг "Публиковать Web-сервисы по умолчанию"
+flag_publ_web_serv: true # Флаг "Публиковать Web-сервисы
+flag_publ_http_serv_def: true # Флаг "Публиковать HTTP-сервисы по умолчанию"
+
+

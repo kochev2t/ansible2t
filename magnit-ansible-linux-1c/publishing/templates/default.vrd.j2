@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<point xmlns="http://v8.1c.ru/8.2/virtual-resource-system"
+		xmlns:xs="http://www.w3.org/2001/XMLSchema"
+		xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		base="/{{ base_1C }}"
+		ib="Srvr=&quot;{{ server_1c }}&quot;;Ref=&quot;{{ base_1C }}&quot;;" {{ enablade_client_pablic }}>
+	<standardOdata enable="false"
+			reuseSessions="autouse"
+			sessionMaxAge="20"
+			poolSize="10"
+			poolTimeout="5"/>
+	<analytics enable="false"/>
+            {{ web_services }}
+            {{ http_services }}
+</point>

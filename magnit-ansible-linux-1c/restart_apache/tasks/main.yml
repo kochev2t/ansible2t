@@ -1,0 +1,10 @@
+---
+# tasks file for restare_apache
+
+  # Запуск службы
+  - name: restart apache service
+    become: true  
+    ansible.builtin.systemd:
+      name: 'apache2'
+      state: restarted
+      enabled: yes

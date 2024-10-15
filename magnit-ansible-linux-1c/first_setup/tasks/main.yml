@@ -1,0 +1,83 @@
+---
+# tasks file for first_setup
+
+  # Настройка максимально-допустимого числа открытых файлов
+  - name: Add fs.file-max to sysctl.conf
+    become: true
+    ansible.builtin.lineinfile:
+      line: \1 250000
+      backrefs: true
+      mode: '0644'
+      state: present
+      regexp: '^(fs.file-max\s*=)\s*\d+'
+      path: /etc/sysctl.conf
+      
+  # Пересчет sysctl.conf
+  - name: reload sysctl.conf
+    become: true
+    command: "sudo sysctl -p"
+      
+  # Копирование шрифтов пакета ttf-mscorefonts-installer
+  - name: Copy fonts ttf-mscorefonts
+    become: true
+    ansible.builtin.copy:
+      src: "{{ inst_dir_fonts }}"
+      dest: /usr/share
+      owner: root
+      group: root
+      mode: '0644'
+  
+  # Выполнение команды для шрифтов
+  - name: Run 1C install script
+    become: true
+    command: "sudo fc-cache –fv"
+
+  # Создание группы пользователей
+  - name: Create group grp1cv8
+    become: true
+    ansible.builtin.group:
+      name: grp1cv8
+      state: present
+
+  # Создание пользователя
+  - name: Add the user usr1cv8 appending the group grp1cv8
+    become: true
+    ansible.builtin.user:
+      name: usr1cv8
+      groups: grp1cv8
+      append: yes
+  
+  # Создание директории сервера 1С
+  - name: Create a directory Temp 1C if it does not exist
+    become: true
+    ansible.builtin.file:
+      path: "{{ temp_dir_1c }}"
+      owner: usr1cv8
+      group: grp1cv8
+      state: directory
+      mode: '0755'
+
+  # Создание директорий для установки 1С
+  - name: Create a directory Distribution 1C if it does not exist
+    become: true
+    ansible.builtin.file:
+      path: "{{ item }}"
+      owner: usr1cv8
+      group: grp1cv8
+      state: directory
+      mode: '0755'
+    loop:
+      - /opt/1cv8
+      - /opt/1cv8/x86_64
+      - /var/lib/1cv8
+      - /opt/1cv8/scripts
+
+  # Копирование файлов скриптов в требуемую папку
+  - name: Copy scripts
+    become: true
+    ansible.builtin.copy:
+      src: "{{ inst_dir_scripts }}"
+      dest: /opt/1cv8/scripts
+      owner: root
+      group: root
+      mode: '0755'

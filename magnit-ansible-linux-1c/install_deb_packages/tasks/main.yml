@@ -1,0 +1,22 @@
+---
+# tasks file for install_deb_packages
+
+  # Копирование файлов необходимых пакетов для установки
+  - name: copy files of packages
+    copy:
+      src: "{{ inst_deb_dir }}/{{ deb_dir }}"
+      dest: "{{ temp_dir }}"
+      mode: 0777
+
+  # Установка пакетов
+  - name: install local deb
+    become: true
+    apt:
+      deb: "{{ temp_dir }}/{{ deb_dir }}/{{ item }}"
+    loop: "{{ files }}"
+
+  # Удаление инсталяционных файлов установленных пакетов
+  - name: delete files of libenchant-2-2
+    file:
+      path: "{{ temp_dir }}"
+      state: absent

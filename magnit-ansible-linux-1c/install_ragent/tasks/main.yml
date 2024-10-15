@@ -1,0 +1,47 @@
+---
+# tasks file for install_ragent
+  
+  # Копирование шаблона файла службы
+  - name: Copy template of servise 1C
+    become: true
+    template:
+      backup: true 
+      src: srv1cv8@.service.j2
+      dest: "/opt/1cv8/x86_64/{{ onec_version_name }}/srv1cv8-{{ onec_version_name }}@{{ SRV1CV8_PORT }}.service"
+      owner: root
+      group: root
+      mode: '0644'
+
+  # Отказ от символьных ссылок на файл службы
+  - name: Copy file service to systemd
+    become: true
+    ansible.builtin.copy:
+      src: "/opt/1cv8/x86_64/{{ onec_version_name }}/srv1cv8-{{ onec_version_name }}@{{ SRV1CV8_PORT }}.service"
+      remote_src: true
+      dest: "/etc/systemd/system/srv1cv8-{{ SRV1CV8_PORT }}.service"
+      owner: root
+      group: root
+      mode: '0644'
+
+  # Запуск службы
+  - name: Enable and restart 1C:Enterprise Server service
+    become: true
+    ansible.builtin.systemd:
+      name: 'srv1cv8-{{ SRV1CV8_PORT }}.service'
+      state: restarted
+      enabled: true
+      daemon_reload: true
+
+  # Создание директорий - темпов и логов для порта
+  - name: Create a directory tmp and log
+    become: true
+    ansible.builtin.file:
+      path: "{{ temp_dir_1c }}/{{ SRV1CV8_PORT }}/{{ item }}"
+      owner: usr1cv8
+      group: grp1cv8
+      state: directory
+      mode: '0777'
+    loop:
+      - tmp
+      - log      
+

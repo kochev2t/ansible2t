@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+# VER 1
+import argparse
+import subprocess
+import sys
+import os
+import shutil
+import glob
+
+def del_file (folder):
+    for filename in os.listdir(folder):
+      file_path = os.path.join(folder, filename)
+      try:
+         if os.path.isfile(file_path) or os.path.islink(file_path):
+            os.unlink(file_path)
+         elif os.path.isdir(file_path):
+            print('Удаляется файл %s' % (file_path))
+            shutil.rmtree(file_path)
+      except Exception as e:
+         print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+def fn_stop(donecname, rg_service):
+    for srv in rg_service:
+      service = donecname+"-"+srv+".service"
+      cmd = "systemctl stop "+service 
+      subprocess.run(cmd, shell=True)
+
+def fn_start(donecname, rg_service):
+    for srv in rg_service:
+      service = donecname+"-"+srv+".service"
+      cmd = "systemctl start "+service
+      subprocess.run(cmd, shell=True)
+
+def fn_clear(rg_service, clear_temp):
+    if clear_temp == "no":
+      exit()
+    elif clear_temp == "yes":
+      for srv in rg_service: 
+        try:
+           folder = "/var/1C/"+srv+"/tmp"
+           del_file(folder)
+        except FileNotFoundError:
+           print("Каталог TMP не сконфигурирован для "+srv)
+           pass
+        try:
+           folder = glob.glob(r'/var/1C/'+srv+'/reg_*/snccntx*')
+           for fold in folder:   
+              del_file (fold)
+              os.rmdir(fold)
+        except FileNotFoundError:
+           print("Каталог REG не сконфигурирован для "+srv)
+           pass
+        try:
+           folder = "/var/1C/"+srv+"/log"
+           del_file(folder)
+        except FileNotFoundError:
+           print("Каталог LOG не сконфигурирован для "+srv+", удаляю по пути /var/1C/log")
+           folder = "/var/1C/log"
+           del_file(folder)
+           pass
+    else:
+      print("Не верный режим удаления, допустимые значения yes/no, операция пропущена")  
+
+
+def fn_services_check(lsvrname, rg_service):
+    list_nosrv = []
+    for srv in rg_service:
+      flag = 1
+      for srvall in lsvrname:
+        tempsrv = srv
+        if srvall == srv:
+          flag = 0
+          break
+      if flag == 1:
+        list_nosrv.append(tempsrv)
+    return list_nosrv
+	
+		
+def main(args):
+    global runmode
+    global rg_service
+    global clear_temp
+    runmode = args.runmode.lower()
+    srvcmd = "systemctl --all list-units srv1cv8* | grep srv1cv8 | awk {'print $1'} | awk -F '-' {'print $2'} | awk -F '.' {'print $1'}|uniq"
+    svrname = subprocess.check_output(srvcmd, shell=True)
+    dsvrname = svrname.decode()
+    lsvrname = dsvrname.split()
+    if args.rg_service == "all":
+       rg_service = lsvrname
+    else:
+       rg_service = [x.lower() for x in args.rg_service]
+    clear_temp = args.clear_temp.lower()
+    namecmd="systemctl --all list-units srv1cv8* | grep srv1cv8 | awk {'print $1'} | awk -F '-' {'print $1'} | uniq"
+    onecname = subprocess.check_output(namecmd, shell=True)
+    donecname = onecname.decode()
+    donecname = donecname.strip()
+    donecname = donecname.replace(" ", "")
+    list_nosrv = fn_services_check(lsvrname, rg_service)
+    if len(list_nosrv) != 0:
+       print ("Не распознана служба:", list_nosrv)
+       print ("Список доступных служб:", lsvrname)
+       sys.exit()
+    if runmode == 'stop':
+       fn_stop(donecname, rg_service)
+       fn_clear(rg_service, clear_temp)
+       print("stop complete")
+    elif runmode == 'start':
+       fn_clear(rg_service, clear_temp)
+       fn_start(donecname, rg_service)
+       print("start complete")
+    elif runmode == 'restart':
+       fn_stop(donecname, rg_service)
+       fn_clear(rg_service, clear_temp)
+       fn_start(donecname, rg_service)
+       print("restart complete")
+    elif runmode == "list":
+       print(svrname.decode())
+       print("list complete")
+    else:
+       print ("Не задан режим работы, допустимые значения: stop, start, restart, list")
+  
+if __name__ == '__main__':
+    # create the top-level parser
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-rm', '--runmode', required=False, default="restart", help="Необохимые действия: start, stop, restart, list. По умолчанию restart")
+    parser.add_argument('-rs', '--rg_service', required=False, nargs='+', default="all", help="Имена служб для остановки, По умолчанию все службы на сервере")
+    parser.add_argument('-ct', '--clear_temp', required=False, default="yes", help="Отчистка временных файлов, По умолчанию yes")
+    args = parser.parse_args()
+    main(args)
+

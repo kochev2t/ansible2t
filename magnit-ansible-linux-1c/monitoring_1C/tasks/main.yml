@@ -1,0 +1,79 @@
+---
+# tasks file for Monitoring 1С
+
+  # Копирование скрипта мониторинга 1С в каталог /opt/1cv8/scripts/
+  - name: Copy script zabbix_exporter.py
+    become: true
+    ansible.builtin.copy:
+      src: "{{ script_path }}"
+      dest: /opt/1cv8/scripts/
+      mode: '0755'
+
+  # Копирование списка репозиториев для установки zabbix-sender
+  - name: Copy list of repositories (zabbix-5.list)
+    become: true
+    ansible.builtin.copy:
+      src: "{{ repo_path }}"
+      dest: /etc/apt/sources.list.d/
+      mode: '0644'
+
+  # Добавление в CRON задания, для выполнения скрипта мониторинга 1С, каждую минуту
+  - name: Create a job that runs script for 1 min
+    become: true
+    ansible.builtin.cron:
+      name: "Monitoring 1С every min"
+      user: root
+      job: "python3 /opt/1cv8/scripts/zabbix_exporter.py -rm {{ runmode }} -bn {{ base_name }} -ps {{ pg_server }} -pu {{ pg_user }} -pp '{{ pg_pass }}' -rcu {{ ras_cluster_user }} -rcp '{{ ras_cluster_pass }}'"
+
+  # Добавление в CRON задания, для выполнения скрипта мониторинга 1С, каждую минуту с паузой в 30 секунд
+  - name: Create a job that runs script for 30 sec
+    become: true
+    ansible.builtin.cron:
+      name: "Monitoring 1С every min with delay 30 sec"
+      user: root
+      job: "sleep 30 && python3 /opt/1cv8/scripts/zabbix_exporter.py -rm {{ runmode }} -bn {{ base_name }} -ps {{ pg_server }} -pu {{ pg_user }} -pp '{{ pg_pass }}' -rcu {{ ras_cluster_user }} -rcp '{{ ras_cluster_pass }}'"
+
+  # Обновить список доступных пакетов из репозиториев
+  - name: Run the equivalent of apt update
+    become: true
+    ansible.builtin.apt:
+      update_cache: yes
+
+  # Установка пакета libpq-dev через apt
+  - name: Install libpq-dev (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - libpq-dev
+
+  # Установка пакета python-dev через apt
+  - name: Install python-dev (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - python-dev
+
+  # Установка пакета pip через apt
+  - name: Install pip (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - pip
+
+  # Установка пакета zabbix-sender через apt
+  - name: Install zabbix-sender (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - zabbix-sender
+
+  # Установка python пакета psycopg2 через pip
+  - name: Install psycopg2 python package (pip)
+    become: true
+    ansible.builtin.pip:
+      name: psycopg2
+      extra_args: "--index-url https://repo.corp.tander.ru/repository/pypi/simple/ --trusted-host=repo.corp.tander.ru"

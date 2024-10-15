@@ -1,0 +1,42 @@
+---
+# tasks file for enable restructuring v2
+
+  # Проверка, что присутствует SystemLanguage=RU
+  - name: Ensure SystemLanguage=RU is present
+    become: true
+    lineinfile:
+      path: "{{ conf_file }}"
+      line: "SystemLanguage=RU"
+      mode: '0644'
+
+  # Проверка, что присутствует UpdateDBCfg=v2
+  - name: Ensure UpdateDBCfg=v2 is present
+    become: true
+    lineinfile:
+      path: "{{ conf_file }}"
+      line: "UpdateDBCfg=v2"
+      mode: '0644'
+
+  # Проверка, что присутствует JavaHome
+  - name: Ensure JavaHome is present
+    become: true
+    lineinfile:
+      path: "{{ conf_file }}"
+      line: "JavaHome=/usr/lib/jvm/bellsoft-java11-runtime-full-amd64"
+      mode: '0644'
+
+  # Установка переменной среды JAVA_HOME
+  - name: Set JAVA_HOME environment variable
+    become: true
+    lineinfile:
+      path: /etc/environment
+      line: 'JAVA_HOME=/usr/lib/jvm/bellsoft-java11-runtime-full-amd64'
+      mode: '0644'
+
+  # Установка переменной среды PATH
+  - name: Set PATH environment variable
+    become: true
+    lineinfile:
+      path: /etc/environment
+      line: 'PATH=$PATH:$JAVA_HOME/bin'
+      mode: '0644'

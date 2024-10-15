@@ -1,0 +1,14 @@
+---
+# defaults file for install_deb_packages
+
+inst_deb_dir: /ansible/distr/deb # Директория с инсталами deb пакетов на сервере, в которые есть еще один уровень каталогов - переменная deb_dir, которые относятся к определенным ролям
+temp_dir: /tmp/ansible-temp-files # Временная директория на клиенте куда будут скопированы пакеты DEB, которые будут установлены, а после установки будут удалены
+
+# получение списка файлов из директории files роли
+files:  >-
+      {{
+        lookup('fileglob', '{{ inst_deb_dir }}/{{ deb_dir }}/*', wantlist=True)
+        | map('basename')
+        | list
+      }}
+

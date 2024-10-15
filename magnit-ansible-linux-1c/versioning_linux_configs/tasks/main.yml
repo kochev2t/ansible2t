@@ -1,0 +1,49 @@
+---
+# tasks file for Synchronization config files with GitLab
+
+  # Копирование скрипта синхронизации конфигов в указанную директорию
+  - name: Copy script of sychronization configs files with GitLab
+    become: true
+    ansible.builtin.copy:
+      src: "{{ script_path }}"
+      dest: /opt/1cv8/scripts/
+      mode: '0755'
+
+  # Добавление в CRON задания, для выполнения скрипта синхронизации конфигов, каждый час
+  - name: Create a job that runs script every hour 
+    become: true
+    ansible.builtin.cron:
+      name: "Synchronization configs every hour"
+      user: root
+      minute: "0"
+      hour: "*"
+      job: "python3 -W ignore {{ script_dir_dist }} -hurl {{ host_url }} -pt {{ private_token }} --upload"
+
+  # Обновить список доступных пакетов из репозиториев
+  - name: Run the equivalent of apt update
+    become: true
+    ansible.builtin.apt:
+      update_cache: yes
+
+  # Установка пакета python-dev через apt
+  - name: Install python-dev (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - python-dev
+
+  # Установка пакета pip через apt
+  - name: Install pip (apt)
+    become: true
+    ignore_errors: yes
+    ansible.builtin.apt:
+      pkg:
+        - pip
+
+  # Установка последней версии python пакета python-gitlab через pip
+  - name: Install gitlab python package (pip)
+    become: true
+    ansible.builtin.pip:
+      name: python-gitlab
+      extra_args: "--upgrade"

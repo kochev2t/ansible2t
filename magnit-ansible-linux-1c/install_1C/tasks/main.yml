@@ -1,0 +1,43 @@
+---
+# tasks file for install_1C
+
+  # Остановка и завершение старых служб 1С
+  - name: Remove old 1C services
+    become: true
+    ignore_errors: yes
+    shell: "{{ item }}"
+    with_items:
+    - systemctl stop $(systemctl list-unit-files --no-legend srv1cv8-* | awk '{print $1}')
+    - systemctl stop $(systemctl list-unit-files --no-legend ras-* | awk '{print $1}')
+    - systemctl disable $(systemctl list-unit-files --no-legend srv1cv8-* | awk '{print $1}')
+    - systemctl disable $(systemctl list-unit-files --no-legend ras-* | awk '{print $1}')
+    when: flag_Remove_old_1C_service == true    
+
+  - set_fact:
+      inst_file_name: "setup-full-{{ onec_version_name }}-x86_64.run" 
+
+  # Создание директории, куда будут скопированы файлы для установки 1С 
+  - name: Create directory for package platform 1C
+    ansible.builtin.file:
+      path: "{{ ins_dir_dest }}"
+      state: directory
+      mode: '0755'
+
+  # Копирование файла установки 1С
+  - name: copy file of install platform 1C
+    copy:
+      src: "{{ ins_dir_src }}/{{ inst_file_name }}"
+      dest: "{{ ins_dir_dest }}"
+      mode: 0777
+    when: flag_copy_inst == true 
+
+  # Установка платформы
+  - name: Run 1C install script
+    become: true
+    command: "sudo {{ ins_dir_dest }}/{{ inst_file_name }} --mode unattended --disable-components client_full --enable-components {{enable_components}}"
+
+    # Удаление инсталяционных файлов установленных пакетов
+  - name: Delete directory for package platform 1C
+    file:
+      path: "{{ ins_dir_dest }}"
+      state: absent

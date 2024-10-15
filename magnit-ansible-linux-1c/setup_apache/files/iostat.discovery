@@ -1,0 +1,21 @@
+#!/bin/bash
+#скрипт дискаверинга девайсов на основе iostat
+
+DEVICE_LIST_COUNT=$(iostat | sed '1,6d' | wc -l )
+let DEVICE_LIST_COUNT=$DEVICE_LIST_COUNT-1
+
+echo "{"
+echo "\"data\":["
+
+for ((i=1; i<$DEVICE_LIST_COUNT; i++)); do
+    devs=$(iostat | sed '1,6d' | awk '{print$1}'| head -n $i | tail -n1)
+    echo "    {\"{#DEVNAME}\":\"$devs\"},"
+done
+
+let DEVICE_LIST_COUNT=$DEVICE_LIST_COUNT+1
+    devs=$(iostat | sed '1,6d' | awk '{print$1}'| head -n $i | tail -n1)
+    echo "    {\"{#DEVNAME}\":\"$devs\"}"
+
+echo "]"
+echo "}"
+

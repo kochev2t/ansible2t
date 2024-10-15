@@ -1,0 +1,107 @@
+---
+# tasks file for publishing
+
+- set_fact:
+    enablade_client_pablic: enable="false"
+  when: flag_publ_client != true
+
+##################################################################################################################################
+# Получение переменной - строки, описывающий веб-серверов, это будет в том случае если задан хоть один веб сервер в списке для шаблона default.vrd
+- block:
+
+  - set_fact:
+      ws_enabled: enable="false"
+    when: flag_publ_web_serv != true
+
+  - set_fact:
+      ws_enabled_def: pointEnableCommon="false"
+    when: flag_publ_web_serv_def != true
+
+  - set_fact:
+      web_services: |
+        {{web_services}}
+        <ws {{ ws_enabled }}
+        {{ ws_enabled_def }}>
+
+  - set_fact:
+      web_services: |
+        {{web_services}} 
+        <point name="{{ item }}"
+        alias="{{ item }}.1cws"
+        enable="true"
+        reuseSessions="dontuse"
+        sessionMaxAge="20"
+        poolSize="10"
+        poolTimeout="5"/>
+    loop:
+      "{{ list_web_serv_1c }}"
+
+  - set_fact:
+      web_services: |
+        {{web_services}}
+        </ws>
+
+  when: (list_web_serv_1c is defined and list_web_serv_1c != None)
+
+##################################################################################################################################
+# Получение переменной - строки, описывающий хттп-серверов, это будет в том случае если задан хоть один хттп сервер в списке для шаблона default.vrd
+- block:
+
+  - set_fact:
+      http_enabled_def: publishByDefault="false"
+    when: flag_publ_http_serv_def != true
+
+  - set_fact:
+      http_services: |
+        {{http_services}}
+        <httpServices {{ http_enabled_def }}>
+
+  - set_fact:
+      http_services: |
+        {{http_services}} 
+        <service name="{{ item.name }}"
+        rootUrl="{{ item.rootUrl }}"
+        enable="true"
+        reuseSessions="autouse"
+        sessionMaxAge="20"
+        poolSize="10"
+        poolTimeout="5"/>
+    loop:
+      "{{ list_http_serv_1c }}"
+
+  - set_fact:
+      http_services: |
+        {{http_services}}
+        </httpServices>
+
+  when: (list_http_serv_1c is defined and list_http_serv_1c != None)
+##################################################################################################################################
+
+# переход в папку
+#- name: going katalog 1c
+#  shell: "cd /opt/1cv8/x86_64/{{ onec_version_name }}/"  
+
+ # переход в папку
+- name: publishing base
+  become: true
+  shell: 'sudo /opt/1cv8/x86_64/{{ onec_version_name }}/webinst -publish -apache24 -wsdir {{ base_1C }} -dir /var/www/{{ base_1C }} -connstr "Srvr={{ server_1c }};Ref={{ base_1C }}" -confpath /etc/apache2/apache2.conf'
+  register: reg_publishing
+
+#- name: message
+#  debug:
+#    var: reg_publishing
+
+# Копирование шаблона default.vrd
+- name: Copy template of default.vrd
+  become: true
+  template:
+    backup: true 
+    src: default.vrd.j2
+    dest: "/var/www/{{ base_1C }}/default.vrd"
+    owner: root
+    group: root
+    mode: '0644'
+
+
+
+

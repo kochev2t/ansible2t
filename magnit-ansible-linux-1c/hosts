@@ -1,0 +1,6 @@
+serv1C:
+  hosts:
+    some_host_name:
+      ansible_host: some_host_ip
+
+

@@ -1,0 +1,49 @@
+---
+# tasks file for JRE 
+
+  - name: Create directory for package JRE
+    ansible.builtin.file:
+      path: "{{ jre_dir_dest }}"
+      state: directory
+      mode: '0755'
+
+  - set_fact:
+      jre_file_name: "bellsoft_jre11.0.20_8_linux_amd64_full.deb"
+      
+  # Копирование файла с пакетом JRE
+  - name: copy file of package JRE
+    copy:
+      src: "{{ jre_package }}"
+      dest: "{{ jre_dir_dest }}"
+      mode: 0777
+
+  # Установка пакета JRE через apt
+  - name: Install JRE package
+    apt:
+      deb: "{{ jre_dir_dest }}/{{ jre_file_name }}"
+    register: install_result
+    failed_when: install_result.rc is defined and install_result.rc != 0 and 'dependency problems' not in install_result.stderr
+  
+  # Исправление зависимостей и повтор установку
+  - name: Fix broken dependencies and retry installation
+    command: sudo apt --fix-broken install
+    when: install_result is changed
+  
+  # Повторение установки JRE после исправления зависимостей через apt
+  - name: Retry JRE installation after fixing dependencies
+    apt:
+      deb: "{{ jre_dir_dest }}/{{ jre_file_name }}"
+    when: install_result is changed
+  
+  # Проверка установки Java
+  - name: Verify Java installation
+    command: java --version
+    register: java_version
+    changed_when: false
+    failed_when: java_version.rc != 0
+
+  # Удаление инсталяционных файлов установленных пакетов
+  - name: Delete directory for package JRE
+    file:
+      path: "{{ jre_dir_dest }}"
+      state: absent

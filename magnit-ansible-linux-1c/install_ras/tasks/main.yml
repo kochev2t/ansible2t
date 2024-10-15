@@ -1,0 +1,41 @@
+---
+# tasks file for install_ras
+
+- name: message
+  debug:
+    var: RAS_PORT
+
+# установка RAS сервера будет выполняться если задана переменная RAS_PORT
+- block:
+
+  # Копирование шаблона файла службы
+  - name: Copy template of RAS servise 1C
+    become: true
+    template:
+      backup: true 
+      src: ras.service.j2
+      dest: "/opt/1cv8/x86_64/{{ onec_version_name }}/ras-{{ onec_version_name }}.{{ RAS_PORT }}.service"
+      owner: root
+      group: root
+      mode: '0644'
+
+  # Копирование файла службы в systemd
+  - name: Create 1C:Enterprise Remote Administration Server service
+    become: true
+    ansible.builtin.copy:
+      src: "/opt/1cv8/x86_64/{{ onec_version_name }}/ras-{{ onec_version_name }}.{{ RAS_PORT }}.service"
+      remote_src: true
+      dest: "/etc/systemd/system/ras-{{ RAS_PORT }}.service"
+      owner: root
+      group: root
+      mode: '0644'
+
+  # Запуск службы
+  - name: Enable and restart 1C:Enterprise Remote Administration Server service
+    become: true  
+    ansible.builtin.systemd:
+      name: 'ras-{{ RAS_PORT }}.service'
+      state: restarted
+      enabled: yes
+
+  when: (RAS_PORT is defined and RAS_PORT != None) 
